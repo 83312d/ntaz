@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -63,8 +64,14 @@ var mbpsCmd = &cobra.Command{
 			}
 		}
 
-		for k, v := range dataMap {
-			mbps := (v.bytes * 8) / (v.time * 1024 * 1024)
+		keys := make([]string, 0, len(dataMap))
+		for k := range dataMap {
+			keys = append(keys, k)
+		}
+		slices.Sort(keys)
+
+		for _, k := range keys {
+			mbps := (dataMap[k].bytes * 8) / (dataMap[k].time * 1024 * 1024)
 			fmt.Printf("%s - %f mbps\n", k, mbps)
 		}
 	},
