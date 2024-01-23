@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/spf13/cobra"
 )
@@ -24,8 +25,10 @@ var mbpsCmd = &cobra.Command{
 	Long:  "Read nginx access log of particular format and calculate mbps for all requests. Default log path path is /var/log/nginx/access.log",
 	Run: func(cmd *cobra.Command, args []string) {
 		var fp string
-		var logArr [][]string
+		// var logArr [][]string
 		dataMap := make(map[string]*ResultData)
+		mut := &sync.Mutex{}
+		wg := &sync.WaitGroup{}
 
 		fl, _ := cmd.Flags().GetString("path")
 		if fl == "" {
@@ -45,24 +48,37 @@ var mbpsCmd = &cobra.Command{
 		scanner.Split(bufio.ScanLines)
 
 		for scanner.Scan() {
-			line := scanner.Text()
-			part := strings.Split(line, " - ")
-			logArr = append(logArr, part)
+			wg.Add(1)
+			go func(line string) {
+				defer wg.Done()
+
+				parts := strings.Split(line, " - ")
+				reqProcessTime, err := strconv.ParseFloat(parts[0], 64)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+
+				splittedIpAndTime := strings.Split(parts[1], " ")
+				reqTime := splittedIpAndTime[1]
+				bytesSent, err := strconv.ParseFloat(splittedIpAndTime[2], 64)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+
+				mut.Lock()
+				if data, ok := dataMap[reqTime]; ok {
+					data.bytes += bytesSent
+					data.time += reqProcessTime
+				} else {
+					dataMap[reqTime] = &ResultData{bytes: bytesSent, time: reqProcessTime}
+				}
+				mut.Unlock()
+			}(scanner.Text())
 		}
 
-		for _, line := range logArr {
-			reqProcessTime, _ := strconv.ParseFloat(line[0], 64)
-			splittedIpAndTime := strings.Split(line[1], " ")
-			reqTime := splittedIpAndTime[1]
-			bytesSent, _ := strconv.ParseFloat(splittedIpAndTime[2], 64)
-
-			if data, ok := dataMap[reqTime]; ok {
-				data.bytes += bytesSent
-				data.time += reqProcessTime
-			} else {
-				dataMap[reqTime] = &ResultData{bytes: bytesSent, time: reqProcessTime}
-			}
-		}
+		wg.Wait()
 
 		keys := make([]string, 0, len(dataMap))
 		for k := range dataMap {
