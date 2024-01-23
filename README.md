@@ -2,7 +2,7 @@
 
 Утилита предназначена для анализа access.log веб-сервера nginx.
 
-На данный момент она работает только с конфигурацией log_format такого вида:
+На данный момент работает только с конфигурацией log_format такого вида:
 
 ```nginx
 log_format  main  '$request_time - $remote_addr $time_local $request_length - '
