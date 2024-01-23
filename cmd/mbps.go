@@ -20,7 +20,7 @@ type ResultData struct {
 var mbpsCmd = &cobra.Command{
 	Use:   "mbps",
 	Short: "Read log and perform traffic calculation.",
-	Long:  "Read access log and calculate mbps for all requests. Default log path path is /home/cdn/log/access.log",
+	Long:  "Read nginx access log of particular format and calculate mbps for all requests. Default log path path is /var/log/nginx/access.log",
 	Run: func(cmd *cobra.Command, args []string) {
 		var fp string
 		var logArr [][]string
@@ -28,7 +28,7 @@ var mbpsCmd = &cobra.Command{
 
 		fl, _ := cmd.Flags().GetString("path")
 		if fl == "" {
-			fp = " /var/log/nginx/access.log"
+			fp = "/var/log/nginx/access.log"
 		} else {
 			fp = fl
 		}
