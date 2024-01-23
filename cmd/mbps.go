@@ -17,16 +17,18 @@ type ResultData struct {
 	time  float64
 }
 
-var calcCmd = &cobra.Command{
-	Use:   "calc",
+var mbpsCmd = &cobra.Command{
+	Use:   "mbps",
 	Short: "Read log and perform traffic calculation.",
-	Long:  "",
+	Long:  "Read access log and calculate mbps for all requests. Default log path path is /home/cdn/log/access.log",
 	Run: func(cmd *cobra.Command, args []string) {
 		var fp string
+		var logArr [][]string
+		dataMap := make(map[string]*ResultData)
 
 		fl, _ := cmd.Flags().GetString("path")
 		if fl == "" {
-			fp = "/home/cdn/log/access.log"
+			fp = " /var/log/nginx/access.log"
 		} else {
 			fp = fl
 		}
@@ -40,7 +42,6 @@ var calcCmd = &cobra.Command{
 
 		scanner := bufio.NewScanner(file)
 		scanner.Split(bufio.ScanLines)
-		var logArr [][]string
 
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -48,10 +49,8 @@ var calcCmd = &cobra.Command{
 			logArr = append(logArr, part)
 		}
 
-		dataMap := make(map[string]*ResultData)
-
 		for _, line := range logArr {
-			reqProcessTime,_ := strconv.ParseFloat(line[0], 64)
+			reqProcessTime, _ := strconv.ParseFloat(line[0], 64)
 			splittedIpAndTime := strings.Split(line[1], " ")
 			reqTime := splittedIpAndTime[1]
 			bytesSent, _ := strconv.ParseFloat(splittedIpAndTime[2], 64)
@@ -72,7 +71,7 @@ var calcCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(calcCmd)
+	rootCmd.AddCommand(mbpsCmd)
 
-	calcCmd.Flags().String("path", "", "path to log file")
+	mbpsCmd.Flags().String("path", "", "path to log file")
 }
