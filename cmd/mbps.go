@@ -25,7 +25,6 @@ var mbpsCmd = &cobra.Command{
 	Long:  "Read nginx access log of particular format and calculate mbps for all requests. Default log path path is /var/log/nginx/access.log",
 	Run: func(cmd *cobra.Command, args []string) {
 		var fp string
-		// var logArr [][]string
 		dataMap := make(map[string]*ResultData)
 		mut := &sync.Mutex{}
 		wg := &sync.WaitGroup{}
