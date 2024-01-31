@@ -22,32 +22,33 @@ type ResultData struct {
 var mbpsCmd = &cobra.Command{
 	Use:   "mbps",
 	Short: "Read log and perform traffic calculation.",
-	Long:  "Read nginx access log of particular format and calculate mbps for all requests. Default log path path is /var/log/nginx/access.log",
+	Long:  "Read nginx access log of particular format and calculate mbps for all requests.",
+	Args: cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var fp string
+		var scanner *bufio.Scanner
 		dataMap := make(map[string]*ResultData)
 		mut := &sync.Mutex{}
 		wg := &sync.WaitGroup{}
 
-		fl, _ := cmd.Flags().GetString("path")
-		if fl == "" {
-			fp = "/var/log/nginx/access.log"
+		if len(args) > 0 {
+			fp = args[0]
+
+			file, err := os.Open(fp)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			defer file.Close()
+
+			scanner = bufio.NewScanner(file)
 		} else {
-			fp = fl
+			scanner = bufio.NewScanner(os.Stdin)
 		}
-
-		file, err := os.Open(fp)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		defer file.Close()
-
-		scanner := bufio.NewScanner(file)
-		scanner.Split(bufio.ScanLines)
 
 		for scanner.Scan() {
 			wg.Add(1)
+
 			go func(line string) {
 				defer wg.Done()
 
@@ -94,6 +95,4 @@ var mbpsCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(mbpsCmd)
-
-	mbpsCmd.Flags().String("path", "", "path to log file")
 }
