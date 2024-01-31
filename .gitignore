@@ -23,9 +23,6 @@ bin/
 # Go workspace file
 go.work
 
-# testfiles
-access.log
-
 #IDE
 .idea/
 .vscode/

@@ -12,8 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Path string
-
 type ResultData struct {
 	bytes float64
 	time  float64
@@ -23,7 +21,7 @@ var mbpsCmd = &cobra.Command{
 	Use:   "mbps",
 	Short: "Read log and perform traffic calculation.",
 	Long:  "Read nginx access log of particular format and calculate mbps for all requests.",
-	Args: cobra.MaximumNArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var fp string
 		var scanner *bufio.Scanner
@@ -33,7 +31,6 @@ var mbpsCmd = &cobra.Command{
 
 		if len(args) > 0 {
 			fp = args[0]
-
 			file, err := os.Open(fp)
 			if err != nil {
 				fmt.Println(err)
@@ -41,9 +38,24 @@ var mbpsCmd = &cobra.Command{
 			}
 			defer file.Close()
 
+			info, err := file.Stat()
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			} else if info.Size() == 0 {
+				fmt.Println("File is empty")
+				os.Exit(1)
+			}
+
 			scanner = bufio.NewScanner(file)
 		} else {
-			scanner = bufio.NewScanner(os.Stdin)
+			stat, _ := os.Stdin.Stat()
+			if (stat.Mode() & os.ModeCharDevice) != 0 {
+				fmt.Println("No data provided")
+				os.Exit(1)
+			} else {
+				scanner = bufio.NewScanner(os.Stdin)
+			}
 		}
 
 		for scanner.Scan() {
